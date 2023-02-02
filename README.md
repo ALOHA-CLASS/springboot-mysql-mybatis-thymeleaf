@@ -5,7 +5,7 @@
 
 - SPRING BOOT 2.7.7
 - Thymeleaf
-- ORACLE
+- MySQL
 - Mybatis 3.0
 
 ## Project
