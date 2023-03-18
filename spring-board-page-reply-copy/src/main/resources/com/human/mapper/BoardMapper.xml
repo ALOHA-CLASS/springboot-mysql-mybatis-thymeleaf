@@ -1,0 +1,163 @@
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+    
+<!-- namespace : 매퍼 인터페이스의 경로 작성 -->
+<mapper namespace="com.human.mapper.BoardMapper">
+
+	<!-- id 		: 연결될 메소드 이름 작성 -->
+	<!-- resultType : 조회 결과를 매핑할 클래스 타입 (패키지경로+클래스명) -->
+	<!--  mybatis-config.xml 설정파일에 설정한 패키지 경로나 별칭이 있으면 별칭으로 사용가능 -->
+
+	<!-- 게시글 목록 -->
+	<select id="list" resultType="Board">
+		SELECT *
+		FROM board
+		ORDER BY reg_date DESC
+	</select>
+	
+	<!-- 게시글 쓰기 -->
+	<!-- 
+		▶파라미터 매핑
+		#{변수명} : 매개변수로 클래스를 지정하면, 자동으로 #{변수} 파라미터에 매핑
+		
+		#{index} : 파라미터들을 순서대로 index 로 매핑
+				   ex) VALUES ( #{0}, #{1}, #{2} )
+	 -->
+	<insert id="insert">
+		INSERT INTO board ( title, writer, content )
+		VALUES ( #{title}, #{writer}, #{content} )
+	</insert>
+	
+	<!-- 게시글 읽기 -->
+	<select id="read" resultType="Board">
+		SELECT *
+		FROM board
+		WHERE board_no = #{boardNo}
+	</select>
+	
+	<!-- 게시글 수정 -->
+	<update id="update">
+		UPDATE board
+		   SET title = #{title}
+		      ,writer = #{writer}
+		      ,content = #{content}
+		      ,upd_date = now()
+		WHERE board_no = #{boardNo}
+	</update>
+	
+	<!-- 게시글 삭제 -->
+	<delete id="delete">
+		DELETE FROM board
+		WHERE board_no = #{boardNo}
+	</delete>
+	
+	<!-- 검색 -->
+	<select id="search" resultType="Board">
+		SELECT *
+		FROM board
+		WHERE board_no > 0
+		  AND (
+		  	  title LIKE CONCAT('%',#{keyword},'%')
+		   OR writer LIKE CONCAT('%',#{keyword},'%')
+		   OR content LIKE CONCAT('%',#{keyword},'%')
+		  )
+	    ORDER BY reg_date DESC
+	</select>
+	
+	<!-- 페이징 -->
+	<select id="page" resultType="Board">
+		SELECT *
+		FROM BOARD
+		ORDER BY reg_date DESC
+		LIMIT #{index}, #{rowsPerPage}
+	</select>
+	
+	<!-- 게시글 개수 -->
+	<select id="count" resultType="int">
+		SELECT COUNT(*)
+		FROM board
+	</select>
+	
+	<!-- 게시글 목록 - 검색/페이징 -->
+	<select id="boardList" resultType="Board">
+		SELECT *
+		FROM board
+		WHERE board_no > 0
+		  AND (
+		  		<if test="option.optionCode == 0">
+						title LIKE CONCAT('%',#{option.keyword},'%')
+				   OR writer LIKE CONCAT('%',#{option.keyword},'%')
+				   OR content LIKE CONCAT('%',#{option.keyword},'%')		  
+		  		</if>
+		  		<if test="option.optionCode == 1">
+						title LIKE CONCAT('%',#{option.keyword},'%')
+		  		</if>
+		  		<if test="option.optionCode == 2">
+						content LIKE CONCAT('%',#{option.keyword},'%')
+		  		</if>
+		  		<if test="option.optionCode == 3">
+					   	title LIKE CONCAT('%',#{option.keyword},'%')
+					OR  content LIKE CONCAT('%',#{option.keyword},'%')
+		  		</if>
+		  		<if test="option.optionCode == 4">
+				   		writer LIKE CONCAT('%',#{option.keyword},'%')
+		  		</if>
+		  )
+		ORDER BY reg_date DESC
+		LIMIT #{page.index}, #{page.rowsPerPage}
+	</select>
+	
+	
+	<!-- 게시글 개수 - 검색어 포함 -->
+	<select id="countWithKeyword" resultType="int">
+		SELECT COUNT(*)
+		FROM board
+		WHERE board_no > 0
+		  AND (
+			<if test="option.optionCode == 0">
+					title LIKE CONCAT('%',#{option.keyword},'%')
+				OR writer LIKE CONCAT('%',#{option.keyword},'%')
+				OR content LIKE CONCAT('%',#{option.keyword},'%')		  
+			</if>
+			<if test="option.optionCode == 1">
+					title LIKE CONCAT('%',#{option.keyword},'%')
+			</if>
+			<if test="option.optionCode == 2">
+					content LIKE CONCAT('%',#{option.keyword},'%')
+			</if>
+			<if test="option.optionCode == 3">
+					title LIKE CONCAT('%',#{option.keyword},'%')
+				OR  content LIKE CONCAT('%',#{option.keyword},'%')
+			</if>
+			<if test="option.optionCode == 4">
+					writer LIKE CONCAT('%',#{option.keyword},'%')
+			</if>  
+		  )
+	</select>
+	
+
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

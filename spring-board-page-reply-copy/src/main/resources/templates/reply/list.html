@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+</head>
+<body>
+	<!-- 댓글 목록 -->
+	<th:block th:each=" reply : ${replyList} ">
+		<div class="reply_wrap">
+			<th:block th:if="${reply.replyNo != reply.groupNo}">
+				<th:block th:each=" no : ${ #numbers.sequence(1, reply.depthNo) }">
+					<div class="indent"></div>
+				</th:block>
+			</th:block>
+		
+			<div class="reply_box">
+				<input type="hidden" class="group_no" th:value="${reply.groupNo}">
+				<input type="hidden" class="parent_no" th:value="${reply.parentNo}">
+				<input type="hidden" class="depth_no" th:value="${reply.depthNo}">
+				<input type="hidden" class="seq_no" th:value="${reply.seqNo}">
+				<input type="hidden" class="sub_count" th:value="${reply.subCount}">
+				
+				<span class="reply_writer" th:text="${reply.writer}"></span>
+				<span class="reply_date" th:text="${reply.regDate}"></span>
+				<button type="button" class="btn_reply_update" th:data="${reply.replyNo}">수정</button>
+				<button type="button" class="btn_reply_delete" th:data="${reply.replyNo}">삭제</button>
+				<p class="reply_content" th:text="${reply.content}"></p>
+				<button type="button" class="btn_reply_answer" th:data="${reply.replyNo}">답글</button>
+			</div>
+		</div>
+	</th:block>
+	
+	
+	<script>
+
+		$(function() {
+			
+			addEvent()
+			
+		})
+		
+		// 이벤트 등록
+		function addEvent() {
+			
+			// 삭제 버튼 클릭 이벤트
+			$('.btn_reply_delete').on('click', function() {
+				// 댓글 번호
+				let replyNo = $(this).attr('data')
+				
+				deleteReply(replyNo, boardNo)
+			})
+			
+			
+			// 수정 버튼 클릭 이벤트
+			$('.btn_reply_update').on('click', function() {
+				let reply_box = $(this).parent()
+				let replyNo = $(this).attr('data')
+				let reply_box_content = reply_box.children()
+				
+				let groupNo = $(this).parent().children('.group_no').val()
+				let parentNo = $(this).parent().children('.parent_no').val()
+				let depthNo = $(this).parent().children('.depth_no').val()
+				let seqNo = $(this).parent().children('.seq_no').val()
+				
+				let reply_writer = reply_box.children('.reply_writer').text()
+				let reply_content = reply_box.children('.reply_content').text()
+				reply_box.empty()
+				
+				let editor = "" 
+					+ "<input type='text' name='replyWriter' class='replyWriter' value=" + reply_writer + ">"
+					+ "<br>"
+					+ "<textarea rows='4' cols='50'>" + reply_content + "</textarea>"
+					+ "<br>"
+					+ "<button type='button' class='btn_reply_insert' data='" + replyNo + "'>등록</button>"
+					+ "<button type='button' class='btn_reply_cancel' data='" + replyNo + "'>취소</button>"
+					
+					
+				reply_box.append(editor)
+				
+				// 댓글 수정 등록 버튼 클릭 이벤트
+				$('.btn_reply_insert').on('click', function() {
+					let btn = $(this)
+					
+					reply_writer = btn.parent().children('input').val()
+					reply_content = btn.parent().children('textarea').val()
+					
+					let reply = {
+						'replyNo'	: replyNo,
+						'boardNo'	: boardNo,
+						'writer' 	: reply_writer,
+						'content' 	: reply_content,
+						'groupNo' 	: groupNo,
+						'parentNo' 	: parentNo,
+						'depthNo' 	: depthNo,
+						'seqNo' 	: seqNo,
+					}
+					
+					updateReply( reply )
+				})
+				
+				// 댓글 취소 버튼 클릭 이벤트
+				$('.btn_reply_cancel').on('click', function() {
+					reply_box.empty()
+					reply_box.append( reply_box_content )
+					addEvent()
+				})
+				
+				
+			}) // 수정 버튼 클릭 이벤트 끝
+			
+			
+			// 답글 버튼 클릭 이벤트
+			$('.btn_reply_answer').on('click', function() {
+				
+				let reply_box = $(this).parent()
+				let reply_wrap = reply_box.parent()
+				let replyNo = $(this).attr('data')
+				
+				let groupNo = $(this).parent().children('.group_no').val()
+				let parentNo = replyNo
+				let depthNo = $(this).parent().children('.depth_no').val()
+				let seqNo = $(this).parent().children('.seq_no').val()
+				let subCount = $(this).parent().children('.sub_count').val()
+				
+				let reply_writer = reply_box.children('.reply_writer').text()
+				let reply_content = reply_box.children('.reply_content').text()
+				
+				let editor = "" 
+					+ "<div class='reply_wrap reply_answer'>"
+					+ "<div class='reply_box'>"
+					+ "<input type='text' name='replyWriter' class='replyWriter'>"
+					+ "<br>"
+					+ "<textarea rows='4' cols='50'></textarea>"
+					+ "<br>"
+					+ "<button type='button' class='btn_reply_answer_insert' data='" + replyNo + "'>등록</button>"
+					+ "<button type='button' class='btn_reply_answer_cancel' data='" + replyNo + "'>취소</button>"
+					+ "</div>"
+					+ "</div>"
+					
+				$('.reply_answer').remove()
+				reply_wrap.after( editor )	// 답글 화면 추가
+				
+				
+				// 답글 등록 클릭 이벤트
+				$('.btn_reply_answer_insert').on('click', function() {
+					let btn = $(this)
+					
+					reply_writer = btn.parent().children('input').val()
+					reply_content = btn.parent().children('textarea').val()
+					
+					let reply = {
+						'replyNo'	: replyNo,
+						'boardNo'	: boardNo,
+						'writer' 	: reply_writer,
+						'content' 	: reply_content,
+						'groupNo' 	: groupNo,
+						'parentNo' 	: parentNo,
+						'depthNo' 	: depthNo,
+						'seqNo' 	: seqNo,
+						'subCount' 	: subCount,
+					}
+					
+					insertAnswer( reply )
+					
+				})
+				
+				
+				// 답글 취소 클릭 이벤트
+				$('.btn_reply_answer_cancel').on('click', function() {
+					
+					$('.reply_answer').remove()
+					
+				})
+				
+				
+				
+			})
+			
+		}
+		
+		// 댓글 수정
+		function updateReply(reply) {
+
+			$.ajax({
+				url:	'/reply/update',		// 요청 경로
+				type:	'post',					// 메소드 방식(get, post, put 등)
+				data:  	reply,					// 전송할 데이터
+				dataType: "text",				
+
+				// 서버로부터 정상적인 응답
+				success: function(data) {
+					// 댓글 목록 갱신
+					$('#reply_list').empty()
+					$('#reply_list').append(data)
+					
+				},
+				// 에러
+				error: function(request, status, error) {
+					alert('댓글 수정 중 에러가 발생하였습니다.')
+				},
+			})
+		}
+		
+		// 댓글 삭제
+		function deleteReply(replyNo, boardNo) {
+			let reply = {
+				'replyNo'	: replyNo,
+				'boardNo' 	: boardNo
+			}
+
+			
+			$.ajax({
+				url:	'/reply/delete',		// 요청 경로
+				type:	'post',					// 메소드 방식(get, post, put 등)
+				data:  	reply,					// 전송할 데이터
+				dataType: "text",				
+
+				// 서버로부터 정상적인 응답
+				success: function(data) {
+					// 댓글 목록 갱신
+					$('#reply_list').empty()
+					$('#reply_list').append(data)
+					
+					// 작성한 댓글 내용 초기화
+					$('#replyWriter').val('')
+					$('#replyContent').val('')
+					
+				},
+				// 에러
+				error: function(request, status, error) {
+					alert('댓글 등록 중 에러가 발생하였습니다.')
+				},
+			})
+		}
+		
+		
+		// 답글 등록
+		function insertAnswer( reply ) {
+			
+			$.ajax({
+				url:	'/reply/answer/insert',		// 요청 경로
+				type:	'post',						// 메소드 방식(get, post, put 등)
+				data:  	reply,						// 전송할 데이터
+				dataType: "text",				
+
+				// 서버로부터 정상적인 응답
+				success: function(data) {
+					// 댓글 목록 갱신
+					$('#reply_list').empty()
+					$('#reply_list').append(data)
+				},
+				// 에러
+				error: function(request, status, error) {
+					alert('댓글 등록 중 에러가 발생하였습니다.')
+				},
+			})
+			
+		}
+	
+	</script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>글쓰기</title>
+</head>
+<body>
+	<h1>글쓰기</h1>
+	
+	<form action="/board/insert" method="post">
+		<table>
+			<tr>
+				<td>제목</td>
+				<td>
+					<input type="text" name="title" >
+				</td>
+			</tr>
+			<tr>
+				<td>작성자</td>
+				<td>
+					<input type="text" name="writer" >
+				</td>
+			</tr>
+			<tr>
+				<td>내용</td>
+				<td>
+					<textarea rows="10" cols="40" name="content"></textarea>
+				</td>
+			</tr>
+		</table>
+		<div>
+			<button type="submit">등록</button>
+			<button type="button" onclick="moveList()">목록</button>
+		</div>
+	
+	</form>
+	
+	<script>
+		function moveList() {
+			location.href = "/board/list"
+		}
+	</script>
+</body>
+</html>
+
+
+
+
+
+
+

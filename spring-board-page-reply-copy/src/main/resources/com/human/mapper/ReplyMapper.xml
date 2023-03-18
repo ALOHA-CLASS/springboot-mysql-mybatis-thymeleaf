@@ -1,0 +1,189 @@
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+    
+<!-- namespace : 매퍼 인터페이스의 경로 작성 -->
+<mapper namespace="com.human.mapper.ReplyMapper">
+
+	<!-- 댓글 매핑 -->
+	<resultMap type="Reply" id="replyMap">
+		
+		<id property="replyNo" column="reply_no" />
+		<result property="writer" column="writer" />
+		<result property="content" column="content" />
+		<result property="boardNo" column="board_no" />
+		<result property="groupNo" column="group_no" />
+		<result property="parentNo" column="parent_no" />
+		<result property="depthNo" column="depth_no" />
+		<result property="seqNo" column="seq_no" />
+		<result property="regDate" column="reg_date" />
+		<result property="updDate" column="upd_date" />
+		<result property="subCount" column="sub_count" />
+		
+		<collection property="subList" resultMap="subReplyMap"></collection>
+	
+	</resultMap>
+	
+	<!-- 자식 댓글 매핑 -->
+	<resultMap type="Reply" id="subReplyMap">
+		
+		<id property="replyNo" column="sub_reply_no" />
+		<result property="writer" column="sub_writer" />
+		<result property="content" column="sub_content" />
+		<result property="boardNo" column="sub_board_no" />
+		<result property="groupNo" column="sub_group_no" />
+		<result property="parentNo" column="sub_parent_no" />
+		<result property="depthNo" column="sub_depth_no" />
+		<result property="seqNo" column="sub_seq_no" />
+		<result property="regDate" column="sub_reg_date" />
+		<result property="updDate" column="sub_upd_date" />
+		<result property="subCount" column="sub_sub_count" />
+		
+	</resultMap>
+	
+	<!-- 댓글 전체 목록 -->
+	<select id="list" resultMap="replyMap">
+		<![CDATA[
+			SELECT r1.*
+			      ,r2.reply_no 	sub_reply_no
+			      ,r2.writer 	sub_writer
+			      ,r2.content 	sub_content
+			      ,r2.board_no 	sub_board_no
+			      ,r2.group_no 	sub_group_no
+			      ,r2.parent_no sub_parent_no
+			      ,r2.depth_no 	sub_depth_no
+			      ,r2.seq_no 	sub_seq_no
+			      ,r2.reg_date 	sub_reg_date
+			      ,r2.upd_date 	sub_upd_date
+			      ,r2.sub_count sub_sub_count
+			  FROM reply r1
+			       LEFT JOIN (
+								SELECT *
+								FROM reply
+								WHERE reply_no <> group_no
+							) r2
+			       ON r1.group_no = r2.group_no
+			ORDER BY r1.group_no ASC
+			        ,r1.seq_no ASC
+			        ,r1.depth_no ASC
+			        ,r1.reg_date DESC
+		]]>
+	</select>
+	
+	
+	<!-- 댓글 목록 -->
+	<select id="listByBoardNo" resultMap="replyMap">
+		<![CDATA[
+			SELECT r1.*
+			      ,r2.reply_no 	sub_reply_no
+			      ,r2.writer 	sub_writer
+			      ,r2.content 	sub_content
+			      ,r2.board_no 	sub_board_no
+			      ,r2.group_no 	sub_group_no
+			      ,r2.parent_no sub_parent_no
+			      ,r2.depth_no 	sub_depth_no
+			      ,r2.seq_no 	sub_seq_no
+			      ,r2.reg_date 	sub_reg_date
+			      ,r2.upd_date 	sub_upd_date
+			      ,r2.sub_count sub_sub_count
+			  FROM reply r1
+			       LEFT JOIN (
+								SELECT *
+								FROM reply
+								WHERE reply_no <> group_no
+							) r2
+			       ON r1.group_no = r2.group_no
+			WHERE r1.board_no = #{boardNo}
+			ORDER BY r1.group_no ASC
+			        ,r1.seq_no ASC
+			        ,r1.depth_no ASC
+			        ,r1.reg_date ASC
+		]]>
+	</select>
+	
+	<!-- 댓글 등록 -->
+	<insert id="insert">
+		INSERT INTO reply ( writer, content, board_no, group_no, parent_no, depth_no, seq_no )
+		VALUES ( #{writer}, #{content}, #{boardNo}, #{groupNo}, #{parentNo}, #{depthNo}, #{seqNo} )
+	</insert>
+	
+	<!-- 댓글 수정 -->
+	<update id="update">
+		UPDATE reply
+		   SET writer = #{writer}
+		      ,content = #{content}
+		      ,group_no = #{groupNo}
+		      ,parent_no = #{parentNo}
+		      ,depth_no = #{depthNo}
+		      ,seq_no = #{seqNo}
+		      ,upd_date = now()
+		WHERE reply_no = #{replyNo}	
+	</update>  
+	
+	
+	<!-- 댓글 삭제 -->
+	<delete id="delete">
+		DELETE FROM reply
+		WHERE reply_no = #{replyNo}
+	</delete>
+	
+	<!-- [최댓값] - 댓글번호 -->
+	<select id="maxReplyNo" resultType="int">
+		SELECT MAX(reply_no)
+		FROM reply
+	</select>
+	
+	<!-- 순서번호 갱신 -->
+	<!-- 
+		같은 그룹번호를 갖은 댓글들 중,
+        해당 댓글에 지정한 순서번호보다 크거나 같은 경우면, +1 증가
+	 -->
+	<update id="syncSeqNo">
+		UPDATE reply
+		   SET seq_no = seq_no + 1
+		 WHERE group_no = #{groupNo}
+		   AND seq_no >= #{seqNo}
+	</update>
+	
+	<!-- 부모댓글의 자식개수 갱신 -->
+	<update id="syncSubCount">
+		UPDATE reply
+		   SET sub_count = sub_count + #{no}
+		 WHERE reply_no = #{parentNo}
+	</update>
+	
+	<!-- 댓글 조회 -->
+	<select id="select" resultType="Reply">
+		SELECT *
+		FROM reply
+		WHERE reply_no = #{replyNo}
+	</select>
+	
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<title>게시글 목록</title>
+</head>
+<body>
+	<h1>게시글 목록</h1>
+	
+	
+	<form action="/board/list" method="get">
+
+		<!-- 검색 옵션-->
+		<select name="optionCode" id="optionCode">
+			<option value="0">전체</option>
+			<option value="1">제목</option>
+			<option value="2">내용</option>
+			<option value="3">제목+내용</option>
+			<option value="4">작성자</option>
+		</select>
+
+		<input type="text" name="keyword" th:value="${param.keyword}" 
+			   placeholder="검색어를 입력하세요.">
+		<button type="submit">검색</button>
+		
+		<!-- 페이징 옵션 -->
+		<select id="rowsPerPage" name="rowsPerPage">
+			<option value="5">5개씩</option>
+			<option value="10">10개씩</option>
+			<option value="15">15개씩</option>
+			<option value="20">20개씩</option>
+			<option value="30">30개씩</option>
+			<option value="40">40개씩</option>
+			<option value="50">50개씩</option>
+		</select>
+		
+		<select id="pageCount" name="pageCount">
+			<option value="5">5 페이지씩</option>
+			<option value="10">10 페이지씩</option>
+			<option value="20">20 페이지씩</option>
+		</select>
+		
+		<a href="/board/insert">글쓰기</a>
+	</form>
+	
+	<p th:text="|${page.totalCount} 건의 게시글이 조회되었습니다.|"></p>
+		
+	
+	<table border="1">
+		<tr>
+			<th width="50">번호</th>
+			<th width="300">제목</th>
+			<th width="100">작성자</th>
+			<th width="200">등록일자</th>
+			<th width="200">수정일자</th>
+		</tr>
+		
+		<!-- 조회된 데이터가 없을 때 -->
+		<tr th:if="${ #lists.isEmpty(boardList) }">
+			<td colspan="5" align="center">
+				조회된 데이터가 없습니다.
+			</td>
+		</tr>
+		
+		<!-- 
+			타임리프 태그 반복문
+			th:each="요소 : ${배열, 컬렉션}"
+			
+			타임리프 블록 태그
+			<th:block> : 필요한 데이터를 블록으로 묶는 태그
+						 *브라우저가 렌더링 할 때 사라진다
+		 -->
+		 <th:block th:each="board : ${boardList}">
+		 	<tr>
+		 		<td width="50" align="center" th:text="${board.boardNo}"></td>
+		 		<td width="300">
+		 			<a th:href="|/board/read?boardNo=${board.boardNo}|" th:text="${board.title}"></a>
+		 		</td>
+		 		<td width="100" align="center" th:text="${board.writer}"></td>
+		 		
+		 		<!-- ${ } :   th:속성 안에서 모델에 등록된 변수의 값을 가져오는 기호  -->
+				<!-- 
+					▶LocalDateTime 타입 날짜 포맷
+					th:text="${ #temporals.format(날짜데이터, '날짜형식') }"
+					(예시)
+					th:text="${ #temporals.format(board.regDate, 'yyyy-MM-dd HH:mm:ss') }"     
+					
+					▶Date 타입 날짜 포맷
+					th:text="${ #dates.format(날짜데이터, '날짜형식') }"
+				 -->		 		
+		 		<td width="200" align="center">
+		 			<span th:text="${ #temporals.format(board.regDate, 'yyyy-MM-dd HH:mm:ss') }"></span>    
+		 		</td>
+		 		<td width="200" align="center">
+		 			<span th:text="${ #temporals.format(board.updDate, 'yyyy-MM-dd HH:mm:ss') }"></span>       
+		 		</td>
+		 	</tr>
+		 </th:block>
+		 <!-- 
+		  -->
+		
+	</table>
+	
+	<!-- 페이지네이션 -->
+	<!-- 
+		#numbers.sequence( 시작번호, 끝번호 )
+		: 시작 번호부터, 끝 번호까지 연결된 리스트를 반환 
+	-->
+	<!-- 처음 -->
+	<a th:href="|javascript: change(${page.firstPage});|">[처음]</a>
+	
+	<!-- 이전 -->
+	<th:block th:if="${page.prev} > 0 ">
+		<a th:href="|javascript: change(${page.prev});|">[이전]</a>
+	</th:block>
+	
+	<th:block th:each="no : ${ #numbers.sequence(page.startPage, page.endPage) }">
+		<!-- no가 pageNum 일치하면, 글씨를 굵게 -->
+		<th:block th:if="${no == page.pageNum}">
+			<b>
+		</th:block>
+				<a th:href="|javascript: change(${no});|" th:text="${no}"></a>
+		<th:block th:if="${no == page.pageNum}">
+			</b>
+		</th:block>
+	</th:block>
+	
+	<!-- 다음 -->
+	<th:block th:if="${page.next} <= ${page.lastPage} ">
+		<a th:href="|javascript: change(${page.next});|">[다음]</a>
+	</th:block>
+	
+	<!-- 마지막 -->
+	<a th:href="|javascript: change(${page.lastPage});|">[마지막]</a>
+	
+	<!-- 타임리프 - 자바스크립트 인라인 기능 -->
+	<!-- 객체를 자동으로 JSON을 변환 -->
+	<script th:inline="javascript">
+	
+		let page = [[${page}]]			// 객체 --> JSON
+		let option = [[${option}]]		// 객체 --> JSON
+		// let keyword = [[${param.keyword}]]
+		// keyword = (keyword == null ? "" : keyword);
+
+		// 문서 준비 이벤트
+		document.addEventListener('DOMContentLoaded', function() {
+
+			//  검색 옵션 초기화
+			let optionCode = document.getElementById('optionCode')
+			
+			for(let i = 0 ; i < optionCode.options.length ; i++) {
+				if( option.optionCode == optionCode.options[i].value ) {
+					optionCode.options[i].selected = true	
+				}
+			}
+
+
+			// rowsPerPage (게시글 개수 옵션) 초기화
+			let rowsPerPage = document.getElementById('rowsPerPage')
+			
+			for(let i = 0 ; i < rowsPerPage.options.length ; i++) {
+				if( page.rowsPerPage == rowsPerPage.options[i].value ) {
+					rowsPerPage.options[i].selected = true	
+				}
+			}
+			
+			// pageCount (페이지 개수 옵션) 초기화
+			let pageCount = document.getElementById('pageCount')
+			
+			for(let i = 0 ; i < pageCount.options.length ; i++) {
+				if( page.pageCount == pageCount.options[i].value ) {
+					pageCount.options[i].selected = true	
+				}
+			}
+
+
+			// rowsPerPage (게시글 개수) 변경 이벤트
+			rowsPerPage.addEventListener('change', function() {
+				page.rowsPerPage = rowsPerPage.value
+				change()
+			})
+			
+			// pageCount (페이지 개수) 변경 이벤트
+			pageCount.addEventListener('change', function() {
+				page.pageCount = pageCount.value
+				change()
+			})
+
+		})
+		
+		// 페이지 이동 
+		function change( pageNum=1 ) {
+			location.href = "/board/list?"
+						  + "pageNum=" + pageNum
+						  + "&rowsPerPage=" + page.rowsPerPage
+						  + "&pageCount=" + page.pageCount
+						  + "&keyword=" + option.keyword
+						  + "&optionCode=" + option.optionCode
+		}
+	
+	</script>
+	
+	
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
